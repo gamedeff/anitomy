@@ -30,13 +30,14 @@ class Parser {
 public:
   Parser(Elements& elements, const Options& options, token_container_t& tokens);
 
-  Parser(const Parser&) = delete;
-  Parser& operator=(const Parser&) = delete;
+  Parser(const Parser&);// = delete;
+  Parser& operator=(const Parser&);// = delete;
 
   bool Parse();
 
 private:
   void SearchForKeywords();
+bool not_numeric_string(size_t index);
   void SearchForEpisodeNumber();
   void SearchForAnimeTitle();
   void SearchForReleaseGroup();
@@ -73,6 +74,8 @@ private:
   bool IsElementCategorySearchable(ElementCategory category);
   bool IsElementCategorySingular(ElementCategory category);
 
+  void set_anime_season(token_iterator_t first, token_iterator_t second,
+	  const string_t& content);
   bool CheckAnimeSeasonKeyword(const token_iterator_t token);
   bool CheckEpisodeKeyword(const token_iterator_t token);
 
@@ -82,9 +85,9 @@ private:
 
   bool IsTokenIsolated(const token_iterator_t token) const;
 
-  const int kAnimeYearMin = 1900;
-  const int kAnimeYearMax = 2050;
-  const int kEpisodeNumberMax = kAnimeYearMin - 1;
+  static const int kAnimeYearMin;
+  static const int kAnimeYearMax;
+  static const int kEpisodeNumberMax;
 
   Elements& elements_;
   const Options& options_;

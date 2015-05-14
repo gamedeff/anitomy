@@ -80,7 +80,7 @@ public:
   const element_pair_t& operator[](size_t position) const;
 
   // Value access
-  string_t& get(ElementCategory category);
+  const string_t& get(ElementCategory category);
   std::vector<string_t> get_all(ElementCategory category) const;
 
   // Modifiers

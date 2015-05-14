@@ -17,6 +17,7 @@
 */
 
 #include <algorithm>
+#include <functional>
 
 #include "element.h"
 
@@ -76,12 +77,15 @@ const element_pair_t& Elements::operator[](size_t position) const {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-string_t& Elements::get(ElementCategory category) {
-  auto element = find(category);
+const string_t empty_element = L"";
+
+const string_t& Elements::get(ElementCategory category) {
+  element_container_t::iterator element = find(category);
 
   if (element == elements_.end())
-    element = elements_.insert(elements_.end(),
-                               std::make_pair(category, string_t()));
+	  return empty_element;
+    //element = elements_.insert(elements_.end(),
+    //                           std::make_pair(category, string_t()));
 
   return element->second;
 }
@@ -89,9 +93,9 @@ string_t& Elements::get(ElementCategory category) {
 std::vector<string_t> Elements::get_all(ElementCategory category) const {
   std::vector<string_t> elements;
 
-  for (const auto& element : elements_)
-    if (element.first == category)
-      elements.push_back(element.second);
+  for (element_container_t::const_iterator element = elements_.begin(); element != elements_.end(); ++element)
+    if (element->first == category)
+      elements.push_back(element->second);
 
   return elements;
 }
@@ -107,11 +111,13 @@ void Elements::insert(ElementCategory category, const string_t& value) {
     elements_.push_back(std::make_pair(category, value));
 }
 
+bool is_category(const element_pair_t element, const ElementCategory category)
+{
+	return element.first == category;
+}
+
 void Elements::erase(ElementCategory category) {
-  auto iterator = std::remove_if(elements_.begin(), elements_.end(),
-      [&](const element_pair_t& element) {
-        return element.first == category;
-      });
+  element_container_t::iterator iterator = std::remove_if(elements_.begin(), elements_.end(), std::bind2nd(std::ptr_fun(is_category), category));
   elements_.erase(iterator, elements_.end());
 }
 
@@ -122,10 +128,7 @@ element_iterator_t Elements::erase(element_iterator_t iterator) {
 ////////////////////////////////////////////////////////////////////////////////
 
 size_t Elements::count(ElementCategory category) const {
-  return std::count_if(elements_.begin(), elements_.end(),
-      [&](const element_pair_t& element) {
-        return element.first == category;
-      });
+  return std::count_if(elements_.begin(), elements_.end(), std::bind2nd(std::ptr_fun(is_category), category));
 }
 
 bool Elements::empty(ElementCategory category) const {
@@ -133,17 +136,11 @@ bool Elements::empty(ElementCategory category) const {
 }
 
 element_iterator_t Elements::find(ElementCategory category) {
-  return std::find_if(elements_.begin(), elements_.end(),
-      [&](const element_pair_t& element) {
-        return element.first == category;
-      });
+  return std::find_if(elements_.begin(), elements_.end(), std::bind2nd(std::ptr_fun(is_category), category));
 }
 
 element_const_iterator_t Elements::find(ElementCategory category) const {
-  return std::find_if(elements_.cbegin(), elements_.cend(),
-      [&](const element_pair_t& element) {
-        return element.first == category;
-      });
+  return std::find_if(elements_.begin(), elements_.end(), std::bind2nd(std::ptr_fun(is_category), category));
 }
 
 }  // namespace anitomy

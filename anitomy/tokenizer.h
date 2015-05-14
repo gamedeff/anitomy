@@ -31,11 +31,13 @@ public:
   Tokenizer(const string_t& filename, Elements& elements,
             const Options& options, token_container_t& tokens);
 
-  Tokenizer(const Tokenizer&) = delete;
-  Tokenizer& operator=(const Tokenizer&) = delete;
+  Tokenizer(const Tokenizer&);// = delete;
+  Tokenizer& operator=(const Tokenizer&);// = delete;
 
   bool Tokenize();
 
+  const Options& options_;
+  mutable string_t delimiters;
 private:
   void AddToken(TokenCategory category, bool enclosed, const TokenRange& range);
   void TokenizeByBrackets();
@@ -47,7 +49,6 @@ private:
 
   Elements& elements_;
   const string_t& filename_;
-  const Options& options_;
   token_container_t& tokens_;
 };
 

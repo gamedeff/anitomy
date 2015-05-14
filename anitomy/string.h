@@ -27,9 +27,12 @@ typedef wchar_t char_t;
 typedef std::basic_string<char_t> string_t;
 
 bool IsAlphanumericChar(const char_t c);
+bool IsNotAlphanumericChar(const char_t c);
 bool IsHexadecimalChar(const char_t c);
+bool IsNotHexadecimalChar(const char_t c);
 bool IsLatinChar(const char_t c);
 bool IsNumericChar(const char_t c);
+bool IsNotNumericChar(const char_t c);
 bool IsAlphanumericString(const string_t& str);
 bool IsHexadecimalString(const string_t& str);
 bool IsMostlyLatinString(const string_t& str);

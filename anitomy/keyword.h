@@ -19,7 +19,7 @@
 #ifndef ANITOMY_KEYWORD_H
 #define ANITOMY_KEYWORD_H
 
-#include <initializer_list>
+//#include <initializer_list>
 #include <map>
 #include <vector>
 
@@ -32,12 +32,12 @@ class TokenRange;
 
 class KeywordOptions {
 public:
-  KeywordOptions() {}
+  KeywordOptions() : identifiable(true), searchable(true), valid(true) {}
   KeywordOptions(bool identifiable, bool searchable, bool valid);
 
-  bool identifiable = true;
-  bool searchable = true;
-  bool valid = true;
+  bool identifiable; // = true;
+  bool searchable; // = true;
+  bool valid; // = true;
 };
 
 class Keyword {
@@ -53,7 +53,7 @@ public:
   KeywordManager();
 
   void Add(ElementCategory category, const KeywordOptions& options,
-           const std::initializer_list<string_t>& keywords);
+           const std::vector<string_t>& keywords);
 
   bool Find(ElementCategory category, const string_t& str) const;
   bool Find(const string_t& str, ElementCategory& category, KeywordOptions& options) const;

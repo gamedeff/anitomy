@@ -29,24 +29,25 @@ const string_t kDashes = L"-\u2010\u2011\u2012\u2013\u2014\u2015";
 const string_t kDashesWithSpace = L" -\u2010\u2011\u2012\u2013\u2014\u2015";
 
 size_t Parser::FindNumberInString(const string_t& str) {
-  auto it = std::find_if(str.begin(), str.end(), IsNumericChar);
+  string_t::const_iterator it = std::find_if(str.begin(), str.end(), IsNumericChar);
   return it == str.end() ? str.npos : (it - str.begin());
 }
 
 string_t Parser::GetNumberFromOrdinal(const string_t& word) {
-  static const std::map<string_t, string_t> ordinals{
-      {L"1st", L"1"}, {L"First", L"1"},
-      {L"2nd", L"2"}, {L"Second", L"2"},
-      {L"3rd", L"3"}, {L"Third", L"3"},
-      {L"4th", L"4"}, {L"Fourth", L"4"},
-      {L"5th", L"5"}, {L"Fifth", L"5"},
-      {L"6th", L"6"}, {L"Sixth", L"6"},
-      {L"7th", L"7"}, {L"Seventh", L"7"},
-      {L"8th", L"8"}, {L"Eighth", L"8"},
-      {L"9th", L"9"}, {L"Ninth", L"9"},
+  static /*const*/ std::map<string_t, string_t> ordinals;
+  {
+      ordinals.insert(std::pair<string_t, string_t>(L"1st", L"1")); ordinals.insert(std::pair<string_t, string_t>(L"First", L"1"));
+      ordinals.insert(std::pair<string_t, string_t>(L"2nd", L"2")); ordinals.insert(std::pair<string_t, string_t>(L"Second", L"2"));
+      ordinals.insert(std::pair<string_t, string_t>(L"3rd", L"3")); ordinals.insert(std::pair<string_t, string_t>(L"Third", L"3"));
+      ordinals.insert(std::pair<string_t, string_t>(L"4th", L"4")); ordinals.insert(std::pair<string_t, string_t>(L"Fourth", L"4"));
+      ordinals.insert(std::pair<string_t, string_t>(L"5th", L"5")); ordinals.insert(std::pair<string_t, string_t>(L"Fifth", L"5"));
+      ordinals.insert(std::pair<string_t, string_t>(L"6th", L"6")); ordinals.insert(std::pair<string_t, string_t>(L"Sixth", L"6"));
+      ordinals.insert(std::pair<string_t, string_t>(L"7th", L"7")); ordinals.insert(std::pair<string_t, string_t>(L"Seventh", L"7"));
+      ordinals.insert(std::pair<string_t, string_t>(L"8th", L"8")); ordinals.insert(std::pair<string_t, string_t>(L"Eighth", L"8"));
+      ordinals.insert(std::pair<string_t, string_t>(L"9th", L"9")); ordinals.insert(std::pair<string_t, string_t>(L"Ninth", L"9"));
   };
 
-  auto it = ordinals.find(word);
+  std::map<string_t, string_t>::const_iterator it = ordinals.find(word);
   return it != ordinals.end() ? it->second : string_t();
 }
 
@@ -58,7 +59,7 @@ bool Parser::IsDashCharacter(const string_t& str) {
   if (str.size() != 1)
     return false;
 
-  auto result = std::find(kDashes.begin(), kDashes.end(), str.front());
+  string_t::const_iterator result = std::find(kDashes.begin(), kDashes.end(), str.at(0));
   return result != kDashes.end();
 }
 
@@ -78,7 +79,7 @@ bool Parser::IsResolution(const string_t& str) {
 
   // *###p
   } else if (str.size() >= 3 + 1) {
-    if (str.back() == L'p' || str.back() == L'P') {
+    if (str.at(str.size() - 1) == L'p' || str.at(str.size() - 1) == L'P') {
       for (size_t i = 0; i < str.size() - 1; i++)
         if (!IsNumericChar(str.at(i)))
           return false;
@@ -91,24 +92,24 @@ bool Parser::IsResolution(const string_t& str) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool Parser::CheckAnimeSeasonKeyword(const token_iterator_t token) {
-  auto set_anime_season = [&](token_iterator_t first, token_iterator_t second,
+void Parser::set_anime_season(token_iterator_t first, token_iterator_t second,
                               const string_t& content) {
     elements_.insert(kElementAnimeSeason, content);
     first->category = kIdentifier;
     second->category = kIdentifier;
   };
 
-  auto previous_token = FindPreviousToken(tokens_, token, kFlagNotDelimiter);
+bool Parser::CheckAnimeSeasonKeyword(const token_iterator_t token) {
+  const token_iterator_t previous_token = FindPreviousToken(tokens_, token, kFlagNotDelimiter);
   if (previous_token != tokens_.end()) {
-    auto number = GetNumberFromOrdinal(previous_token->content);
+    string_t number = GetNumberFromOrdinal(previous_token->content);
     if (!number.empty()) {
       set_anime_season(previous_token, token, number);
       return true;
     }
   }
 
-  auto next_token = FindNextToken(tokens_, token, kFlagNotDelimiter);
+  const token_iterator_t next_token = FindNextToken(tokens_, token, kFlagNotDelimiter);
   if (next_token != tokens_.end() &&
       IsNumericString(next_token->content)) {
     set_anime_season(token, next_token, next_token->content);
@@ -119,7 +120,7 @@ bool Parser::CheckAnimeSeasonKeyword(const token_iterator_t token) {
 }
 
 bool Parser::CheckEpisodeKeyword(const token_iterator_t token) {
-  auto next_token = FindNextToken(tokens_, token, kFlagNotDelimiter);
+  const token_iterator_t next_token = FindNextToken(tokens_, token, kFlagNotDelimiter);
 
   if (next_token != tokens_.end() &&
       next_token->category == kUnknown) {
@@ -184,7 +185,7 @@ void Parser::BuildElement(ElementCategory category, bool keep_delimiters,
                           const token_iterator_t token_end) const {
   string_t element;
 
-  for (auto token = token_begin; token != token_end; ++token) {
+  for (token_iterator_t token = token_begin; token != token_end; ++token) {
     switch (token->category) {
       case kUnknown:
         element += token->content;
@@ -194,7 +195,7 @@ void Parser::BuildElement(ElementCategory category, bool keep_delimiters,
         element += token->content;
         break;
       case kDelimiter: {
-        auto delimiter = token->content.front();
+        char_t delimiter = token->content.at(0);
         if (keep_delimiters) {
           element.push_back(delimiter);
         } else if (token != token_begin && token != token_end) {
@@ -223,11 +224,11 @@ void Parser::BuildElement(ElementCategory category, bool keep_delimiters,
 ////////////////////////////////////////////////////////////////////////////////
 
 bool Parser::IsTokenIsolated(const token_iterator_t token) const {
-  auto previous_token = FindPreviousToken(tokens_, token, kFlagNotDelimiter);
+  const token_iterator_t previous_token = FindPreviousToken(tokens_, token, kFlagNotDelimiter);
   if (previous_token == tokens_.end() || previous_token->category != kBracket)
     return false;
 
-  auto next_token = FindNextToken(tokens_, token, kFlagNotDelimiter);
+  const token_iterator_t next_token = FindNextToken(tokens_, token, kFlagNotDelimiter);
   if (next_token == tokens_.end() || next_token->category != kBracket)
     return false;
 

@@ -70,7 +70,7 @@ bool Anitomy::RemoveExtensionFromFilename(string_t& filename,
   if (!IsAlphanumericString(extension))
     return false;
 
-  auto keyword = keyword_manager.Normalize(extension);
+  string_t keyword = keyword_manager.Normalize(extension);
   if (!keyword_manager.Find(kElementFileExtension, keyword))
     return false;
 
@@ -80,8 +80,8 @@ bool Anitomy::RemoveExtensionFromFilename(string_t& filename,
 }
 
 void Anitomy::RemoveIgnoredStrings(string_t& filename) const {
-  for (const auto& str : options_.ignored_strings) {
-    EraseString(filename, str);
+  for (std::vector<string_t>::const_iterator str = options_.ignored_strings.begin(); str != options_.ignored_strings.end(); ++str) {
+    EraseString(filename, *str);
   }
 }
 

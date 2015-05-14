@@ -17,6 +17,7 @@
 */
 
 #include <algorithm>
+#include <functional>
 
 #include "token.h"
 
@@ -53,29 +54,29 @@ bool Token::operator==(const Token& token) const {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-static bool CheckTokenFlags(const Token& token, unsigned int flags) {
-  auto check_flag = [&flags](unsigned int flag) {
-    return (flags & flag) == flag;
-  };
+bool check_flag(unsigned int flags, unsigned int flag) {
+	return (flags & flag) == flag;
+};
+void check_category(bool &success, const Token token, unsigned int flags, TokenFlag fe, TokenFlag fn, TokenCategory c) {
+	if (!success)
+		success = check_flag(flags, fe) ? token.category == c :
+				  check_flag(flags, fn) ? token.category != c : false;
+};
 
+static bool CheckTokenFlags(const Token token, unsigned int flags) {
   if (flags & kFlagMaskEnclosed) {
-    bool success = check_flag(kFlagEnclosed) ? token.enclosed : !token.enclosed;
+    bool success = check_flag(flags, kFlagEnclosed) ? token.enclosed : !token.enclosed;
     if (!success)
       return false;
   }
 
   if (flags & kFlagMaskCategories) {
     bool success = false;
-    auto check_category = [&](TokenFlag fe, TokenFlag fn, TokenCategory c) {
-      if (!success)
-        success = check_flag(fe) ? token.category == c :
-                  check_flag(fn) ? token.category != c : false;
-    };
-    check_category(kFlagBracket, kFlagNotBracket, kBracket);
-    check_category(kFlagDelimiter, kFlagNotDelimiter, kDelimiter);
-    check_category(kFlagIdentifier, kFlagNotIdentifier, kIdentifier);
-    check_category(kFlagUnknown, kFlagNotUnknown, kUnknown);
-    check_category(kFlagNotValid, kFlagValid, kInvalid);
+    check_category(success, token, flags, kFlagBracket, kFlagNotBracket, kBracket);
+    check_category(success, token, flags, kFlagDelimiter, kFlagNotDelimiter, kDelimiter);
+    check_category(success, token, flags, kFlagIdentifier, kFlagNotIdentifier, kIdentifier);
+    check_category(success, token, flags, kFlagUnknown, kFlagNotUnknown, kUnknown);
+    check_category(success, token, flags, kFlagNotValid, kFlagValid, kInvalid);
     if (!success)
       return false;
   }
@@ -86,9 +87,7 @@ static bool CheckTokenFlags(const Token& token, unsigned int flags) {
 template<class iterator_t>
 static iterator_t FindTokenBase(iterator_t first, iterator_t last,
                                 unsigned int flags) {
-  return std::find_if(first, last, [&](const Token& token) {
-        return CheckTokenFlags(token, flags);
-      });
+  return std::find_if(first, last, std::bind2nd(std::ptr_fun(CheckTokenFlags), flags));
 }
 
 token_iterator_t FindToken(token_iterator_t first, token_iterator_t last,
@@ -105,7 +104,7 @@ token_reverse_iterator_t FindToken(token_reverse_iterator_t first,
 token_iterator_t FindPreviousToken(token_container_t& tokens,
                                    token_iterator_t first,
                                    unsigned int flags) {
-  auto it = FindToken(std::reverse_iterator<token_iterator_t>(first),
+  token_reverse_iterator_t it = FindToken(std::reverse_iterator<token_iterator_t>(first),
                        tokens.rend(), flags);
   return it == tokens.rend() ? tokens.end() : (++it).base();
 }

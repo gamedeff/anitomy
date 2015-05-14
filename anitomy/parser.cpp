@@ -24,6 +24,10 @@
 
 namespace anitomy {
 
+	const int Parser::kAnimeYearMin = 1900;
+	const int Parser::kAnimeYearMax = 2050;
+	const int Parser::kEpisodeNumberMax = Parser::kAnimeYearMin - 1;
+
 Parser::Parser(Elements& elements, const Options& options,
                token_container_t& tokens)
     : elements_(elements),
@@ -56,13 +60,13 @@ bool Parser::Parse() {
 ////////////////////////////////////////////////////////////////////////////////
 
 void Parser::SearchForKeywords() {
-  for (auto it = tokens_.begin(); it != tokens_.end(); ++it) {
-    auto& token = *it;
+  for (token_container_t::iterator it = tokens_.begin(); it != tokens_.end(); ++it) {
+    Token& token = *it;
 
     if (token.category != kUnknown)
       continue;
 
-    auto word = token.content;
+    string_t word = token.content;
     TrimString(word, L" -");
 
     if (word.empty())
@@ -72,7 +76,7 @@ void Parser::SearchForKeywords() {
       continue;
 
     // Performs better than making a case-insensitive Find
-    auto keyword = keyword_manager.Normalize(word);
+    string_t keyword = keyword_manager.Normalize(word);
     ElementCategory category = kElementUnknown;
     KeywordOptions options;
 
@@ -112,11 +116,15 @@ void Parser::SearchForKeywords() {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+bool Parser::not_numeric_string(size_t index) {
+	return !IsNumericString(tokens_.at(index).content);
+};
+
 void Parser::SearchForEpisodeNumber() {
   // List all unknown tokens that contain a number
   std::vector<size_t> tokens;
   for (size_t i = 0; i < tokens_.size(); ++i) {
-    auto& token = tokens_.at(i);
+    Token& token = tokens_.at(i);
     if (token.category == kUnknown)
       if (FindNumberInString(token.content) != token.content.npos)
         tokens.push_back(i);
@@ -129,10 +137,7 @@ void Parser::SearchForEpisodeNumber() {
     return;
 
   // From now on, we're only interested in numeric tokens
-  auto not_numeric_string = [&](size_t index) -> bool {
-    return !IsNumericString(tokens_.at(index).content);
-  };
-  tokens.erase(std::remove_if(tokens.begin(), tokens.end(), not_numeric_string),
+  tokens.erase(std::remove_if(tokens.begin(), tokens.end(), std::bind1st(std::mem_fun(&Parser::not_numeric_string), this)),
                tokens.end());
 
   if (tokens.empty())
@@ -160,7 +165,7 @@ void Parser::SearchForAnimeTitle() {
   bool enclosed_title = false;
 
   // Find the first non-enclosed unknown token
-  auto token_begin = FindToken(tokens_.begin(), tokens_.end(),
+  token_container_t::iterator token_begin = FindToken(tokens_.begin(), tokens_.end(),
                                kFlagNotEnclosed | kFlagUnknown);
 
   // If that doesn't work, find the first unknown token in the second enclosed
@@ -188,15 +193,15 @@ void Parser::SearchForAnimeTitle() {
 
   // Continue until an identifier (or a bracket, if the title is enclosed)
   // is found
-  auto token_end = FindToken(token_begin, tokens_.end(),
+  token_container_t::iterator token_end = FindToken(token_begin, tokens_.end(),
       kFlagIdentifier | (enclosed_title ? kFlagBracket : kFlagNone));
 
   // If within the interval there's an open bracket without its matching pair,
   // move the upper endpoint back to the bracket
   if (!enclosed_title) {
-    auto last_bracket = token_end;
+    token_container_t::iterator last_bracket = token_end;
     bool bracket_open = false;
-    for (auto token = token_begin; token != token_end; ++token) {
+    for (token_container_t::iterator token = token_begin; token != token_end; ++token) {
       if (token->category == kBracket) {
         last_bracket = token;
         bracket_open = !bracket_open;
@@ -211,8 +216,8 @@ void Parser::SearchForAnimeTitle() {
 }
 
 void Parser::SearchForReleaseGroup() {
-  auto token_begin = tokens_.begin();
-  auto token_end = tokens_.begin();
+  token_container_t::iterator token_begin = tokens_.begin();
+  token_container_t::iterator token_end = tokens_.begin();
 
   do {
     // Find the first enclosed unknown token
@@ -228,7 +233,7 @@ void Parser::SearchForReleaseGroup() {
       continue;
 
     // Ignore if it's not the first non-delimiter token in group
-    auto previous_token = FindPreviousToken(tokens_, token_begin,
+    token_container_t::iterator previous_token = FindPreviousToken(tokens_, token_begin,
                                             kFlagNotDelimiter);
     if (previous_token != tokens_.end() &&
         previous_token->category != kBracket) {
@@ -243,13 +248,13 @@ void Parser::SearchForReleaseGroup() {
 
 void Parser::SearchForEpisodeTitle() {
   // Find the first non-enclosed unknown token
-  auto token_begin = FindToken(tokens_.begin(), tokens_.end(),
+  token_container_t::iterator token_begin = FindToken(tokens_.begin(), tokens_.end(),
                                kFlagNotEnclosed | kFlagUnknown);
   if (token_begin == tokens_.end())
     return;
 
   // Continue until a bracket or identifier is found
-  auto token_end = FindToken(token_begin, tokens_.end(),
+  token_container_t::iterator token_end = FindToken(token_begin, tokens_.end(),
                              kFlagBracket | kFlagIdentifier);
 
   // Build episode title
@@ -259,13 +264,13 @@ void Parser::SearchForEpisodeTitle() {
 ////////////////////////////////////////////////////////////////////////////////
 
 void Parser::SearchForIsolatedNumbers() {
-  for (auto token = tokens_.begin(); token != tokens_.end(); ++token) {
+  for (token_container_t::iterator token = tokens_.begin(); token != tokens_.end(); ++token) {
     if (token->category != kUnknown ||
         !IsNumericString(token->content) ||
         !IsTokenIsolated(token))
       continue;
 
-    auto number = StringToInt(token->content);
+    int number = StringToInt(token->content);
 
     // Anime year
     if (number >= kAnimeYearMin && number <= kAnimeYearMax) {

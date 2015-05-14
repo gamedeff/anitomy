@@ -29,10 +29,18 @@ bool IsAlphanumericChar(const char_t c) {
          (c >= L'a' && c <= L'z');
 }
 
+bool IsNotAlphanumericChar(const char_t c) {
+	return !IsAlphanumericChar(c);
+}
+
 bool IsHexadecimalChar(const char_t c) {
   return (c >= L'0' && c <= L'9') ||
          (c >= L'A' && c <= L'F') ||
          (c >= L'a' && c <= L'f');
+}
+
+bool IsNotHexadecimalChar(const char_t c) {
+	return !IsHexadecimalChar(c);
 }
 
 bool IsLatinChar(const char_t c) {
@@ -42,17 +50,21 @@ bool IsLatinChar(const char_t c) {
 }
 
 bool IsNumericChar(const char_t c) {
-  return c >= L'0' && c <= L'9';
+	return c >= L'0' && c <= L'9';
+}
+
+bool IsNotNumericChar(const char_t c) {
+	return !IsNumericChar(c);
 }
 
 bool IsAlphanumericString(const string_t& str) {
   return !str.empty() &&
-         std::all_of(str.begin(), str.end(), IsAlphanumericChar);
+         std::find_if(str.begin(), str.end(), IsNotAlphanumericChar) == str.end();
 }
 
 bool IsHexadecimalString(const string_t& str) {
   return !str.empty() &&
-         std::all_of(str.begin(), str.end(), IsHexadecimalChar);
+         std::find_if(str.begin(), str.end(), IsNotHexadecimalChar) == str.end();
 }
 
 bool IsMostlyLatinString(const string_t& str) {
@@ -62,7 +74,7 @@ bool IsMostlyLatinString(const string_t& str) {
 
 bool IsNumericString(const string_t& str) {
   return !str.empty() &&
-         std::all_of(str.begin(), str.end(), IsNumericChar);
+         std::find_if(str.begin(), str.end(), IsNotNumericChar) == str.end();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -94,6 +106,8 @@ bool IsStringEqualTo(const string_t& str1, const string_t& str2) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+#define nullptr 0
+
 int StringToInt(const string_t& str) {
   return static_cast<int>(std::wcstol(str.c_str(), nullptr, 10));
 }
@@ -104,7 +118,7 @@ void EraseString(string_t& str, const string_t& erase_this) {
   if (erase_this.empty() || str.size() < erase_this.size())
     return;
 
-  auto pos = str.find(erase_this);
+  string_t::size_type pos = str.find(erase_this);
   while (pos != string_t::npos) {
     str.erase(pos, erase_this.size());
     pos = str.find(erase_this);

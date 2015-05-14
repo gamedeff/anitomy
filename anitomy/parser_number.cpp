@@ -19,6 +19,15 @@
 #include <algorithm>
 #include <regex>
 
+namespace std
+{
+#if defined(_MSC_VER) && _MSC_VER <= 1500 // MSVC 2008 or earlier
+
+	using namespace tr1;
+
+#endif
+}
+
 #include "element.h"
 #include "keyword.h"
 #include "parser.h"
@@ -45,10 +54,10 @@ bool Parser::SetEpisodeNumber(const string_t& number, Token& token,
 
 bool Parser::NumberComesAfterEpisodePrefix(Token& token) {
   size_t number_begin = FindNumberInString(token.content);
-  auto prefix = keyword_manager.Normalize(token.content.substr(0, number_begin));
+  string_t prefix = keyword_manager.Normalize(token.content.substr(0, number_begin));
 
   if (keyword_manager.Find(kElementEpisodePrefix, prefix)) {
-    auto number = token.content.substr(
+    string_t number = token.content.substr(
         number_begin, token.content.length() - number_begin);
     if (!MatchEpisodePatterns(number, token))
       SetEpisodeNumber(number, token, false);
@@ -59,11 +68,11 @@ bool Parser::NumberComesAfterEpisodePrefix(Token& token) {
 }
 
 bool Parser::NumberComesBeforeTotalNumber(const token_iterator_t token) {
-  auto next_token = FindNextToken(tokens_, token, kFlagNotDelimiter);
+  token_iterator_t next_token = FindNextToken(tokens_, token, kFlagNotDelimiter);
 
   if (next_token != tokens_.end()) {
     if (IsStringEqualTo(next_token->content, L"of")) {
-      auto other_token = FindNextToken(tokens_, next_token, kFlagNotDelimiter);
+      token_iterator_t other_token = FindNextToken(tokens_, next_token, kFlagNotDelimiter);
 
       if (other_token != tokens_.end()) {
         if (IsNumericString(other_token->content)) {
@@ -80,9 +89,9 @@ bool Parser::NumberComesBeforeTotalNumber(const token_iterator_t token) {
 }
 
 bool Parser::SearchForEpisodePatterns(std::vector<size_t>& tokens) {
-  for (const auto& token_index : tokens) {
-    auto token = tokens_.begin() + token_index;
-    bool numeric_front = IsNumericChar(token->content.front());
+  for (size_t token_index = 0; token_index < tokens.size(); ++token_index) {
+    token_container_t::iterator token = tokens_.begin() + token_index;
+    bool numeric_front = IsNumericChar(token->content.at(0));
 
     if (!numeric_front) {
       // e.g. "EP.01"
@@ -124,8 +133,8 @@ bool Parser::MatchMultiEpisodePattern(const string_t& word, Token& token) {
   regex_match_results_t match_results;
 
   if (std::regex_match(word, match_results, pattern)) {
-    auto lower_bound = match_results[1].str();
-    auto upper_bound = match_results[2].str();
+    string_t lower_bound = match_results[1].str();
+    string_t upper_bound = match_results[2].str();
     // Avoid matching expressions such as "009-1" or "5-2"
     if (StringToInt(lower_bound) < StringToInt(upper_bound)) {
       if (SetEpisodeNumber(lower_bound, token, true)) {
@@ -163,7 +172,7 @@ bool Parser::MatchSeasonAndEpisodePattern(const string_t& word, Token& token) {
 
 bool Parser::MatchTypeAndEpisodePattern(const string_t& word, Token& token) {
   size_t number_begin = FindNumberInString(word);
-  auto prefix = word.substr(0, number_begin);
+  string_t prefix = word.substr(0, number_begin);
 
   ElementCategory category = kElementAnimeType;
   KeywordOptions options;
@@ -171,10 +180,10 @@ bool Parser::MatchTypeAndEpisodePattern(const string_t& word, Token& token) {
   if (keyword_manager.Find(keyword_manager.Normalize(prefix),
                            category, options)) {
     elements_.insert(kElementAnimeType, prefix);
-    auto number = word.substr(number_begin);
+    string_t number = word.substr(number_begin);
     if (MatchEpisodePatterns(number, token) ||
         SetEpisodeNumber(number, token, true)) {
-      auto it = std::find(tokens_.begin(), tokens_.end(), token);
+      token_container_t::iterator it = std::find(tokens_.begin(), tokens_.end(), token);
       if (it != tokens_.end()) {
         // Split token (we do this last in order to avoid invalidating our
         // token reference earlier)
@@ -202,14 +211,14 @@ bool Parser::MatchFractionalEpisodePattern(const string_t& word, Token& token) {
   return false;
 }
 
-bool Parser::MatchPartialEpisodePattern(const string_t& word, Token& token) {
-  auto it = std::find_if_not(word.begin(), word.end(), IsNumericChar);
-  auto suffix_length = std::distance(it, word.end());
+bool is_valid_suffix(const char_t c) {
+	return (c >= L'A' && c <= L'C') ||
+		(c >= L'a' && c <= L'c');
+};
 
-  auto is_valid_suffix = [](const char_t c) {
-    return (c >= L'A' && c <= L'C') ||
-           (c >= L'a' && c <= L'c');
-  };
+bool Parser::MatchPartialEpisodePattern(const string_t& word, Token& token) {
+  string_t::const_iterator it = std::find_if(word.begin(), word.end(), IsNotNumericChar);
+  size_t suffix_length = std::distance(it, word.end());
 
   if (suffix_length == 1 && is_valid_suffix(*it))
     if (SetEpisodeNumber(word, token, true))
@@ -219,7 +228,7 @@ bool Parser::MatchPartialEpisodePattern(const string_t& word, Token& token) {
 }
 
 bool Parser::MatchNumberSignPattern(const string_t& word, Token& token) {
-  if (word.front() != L'#')
+  if (word.at(0) != L'#')
     return false;
 
   static const regex_t pattern(L"#(\\d{1,3})(?:[-~&+](\\d{1,3}))?(?:[vV](\\d))?");
@@ -239,7 +248,7 @@ bool Parser::MatchNumberSignPattern(const string_t& word, Token& token) {
 }
 
 bool Parser::MatchJapaneseCounterPattern(const string_t& word, Token& token) {
-  if (word.back() != L'\u8A71')
+  if (word.at(word.size() - 1) != L'\u8A71')
     return false;
 
   static const regex_t pattern(L"(\\d{1,3})\u8A71");
@@ -260,8 +269,8 @@ bool Parser::MatchEpisodePatterns(string_t word, Token& token) {
 
   TrimString(word, L" -");
 
-  const bool numeric_front = IsNumericChar(word.front());
-  const bool numeric_back = IsNumericChar(word.back());
+  const bool numeric_front = IsNumericChar(word.at(0));
+  const bool numeric_back = IsNumericChar(word.at(word.size() - 1));
 
   // e.g. "01v2"
   if (numeric_front && numeric_back)
@@ -302,15 +311,15 @@ bool Parser::MatchEpisodePatterns(string_t word, Token& token) {
 ////////////////////////////////////////////////////////////////////////////////
 
 bool Parser::SearchForEquivalentNumbers(std::vector<size_t>& tokens) {
-  for (auto token_index = tokens.begin();
+  for (std::vector<size_t>::iterator token_index = tokens.begin();
        token_index != tokens.end(); ++token_index) {
-    auto token = tokens_.begin() + *token_index;
+    token_container_t::iterator token = tokens_.begin() + *token_index;
 
     if (IsTokenIsolated(token))
       continue;
 
     // Find the first enclosed, non-delimiter token
-    auto next_token = FindNextToken(tokens_, token, kFlagNotDelimiter);
+    token_container_t::iterator next_token = FindNextToken(tokens_, token, kFlagNotDelimiter);
     if (next_token != tokens_.end() &&
         next_token->category == kBracket) {
       next_token = FindNextToken(tokens_, next_token,
@@ -326,7 +335,7 @@ bool Parser::SearchForEquivalentNumbers(std::vector<size_t>& tokens) {
         IsNumericString(next_token->content)) {
       if (IsValidEpisodeNumber(token->content) &&
           IsValidEpisodeNumber(next_token->content)) {
-        auto lower_token =
+        token_container_t::iterator lower_token =
             StringToInt(token->content) < StringToInt(next_token->content) ?
             token : next_token;
         SetEpisodeNumber(lower_token->content, *token, false);
@@ -340,9 +349,9 @@ bool Parser::SearchForEquivalentNumbers(std::vector<size_t>& tokens) {
 }
 
 bool Parser::SearchForIsolatedNumbers(std::vector<size_t>& tokens) {
-  for (auto token_index = tokens.begin();
+  for (std::vector<size_t>::iterator token_index = tokens.begin();
        token_index != tokens.end(); ++token_index) {
-    auto token = tokens_.begin() + *token_index;
+    token_container_t::iterator token = tokens_.begin() + *token_index;
 
     if (!token->enclosed || !IsTokenIsolated(token))
       continue;
@@ -355,10 +364,10 @@ bool Parser::SearchForIsolatedNumbers(std::vector<size_t>& tokens) {
 }
 
 bool Parser::SearchForSeparatedNumbers(std::vector<size_t>& tokens) {
-  for (auto token_index = tokens.begin();
+  for (std::vector<size_t>::iterator token_index = tokens.begin();
        token_index != tokens.end(); ++token_index) {
-    auto token = tokens_.begin() + *token_index;
-    auto previous_token = FindPreviousToken(tokens_, token, kFlagNotDelimiter);
+    token_container_t::iterator token = tokens_.begin() + *token_index;
+    token_container_t::iterator previous_token = FindPreviousToken(tokens_, token, kFlagNotDelimiter);
 
     // See if the number has a preceding "-" separator
     if (previous_token != tokens_.end() &&
@@ -374,10 +383,13 @@ bool Parser::SearchForSeparatedNumbers(std::vector<size_t>& tokens) {
   return false;
 }
 
+bool is_enclosed(const Token& token) { return token.enclosed || token.category == kDelimiter; }
+bool is_not_enclosed(const Token& token) { return !is_enclosed(token); }
+
 bool Parser::SearchForLastNumber(std::vector<size_t>& tokens) {
-  for (auto it = tokens.rbegin(); it != tokens.rend(); ++it) {
+  for (std::vector<size_t>::reverse_iterator it = tokens.rbegin(); it != tokens.rend(); ++it) {
     size_t token_index = *it;
-    auto token = tokens_.begin() + token_index;
+    token_container_t::iterator token = tokens_.begin() + token_index;
 
     // Assuming that episode number always comes after the title, first token
     // cannot be what we're looking for
@@ -389,12 +401,11 @@ bool Parser::SearchForLastNumber(std::vector<size_t>& tokens) {
       continue;
 
     // Ignore if it's the first non-enclosed, non-delimiter token
-    if (std::all_of(tokens_.begin(), token, [](const Token& token) {
-            return token.enclosed || token.category == kDelimiter; }))
+    if (std::find_if(tokens_.begin(), token, is_not_enclosed) == token)
       continue;
 
     // Ignore if the previous token is "Movie" or "Part"
-    auto previous_token = FindPreviousToken(tokens_, token, kFlagNotDelimiter);
+    token_container_t::iterator previous_token = FindPreviousToken(tokens_, token, kFlagNotDelimiter);
     if (previous_token != tokens_.end() &&
         previous_token->category == kUnknown) {
       if (IsStringEqualTo(previous_token->content, L"Movie") ||

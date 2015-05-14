@@ -35,6 +35,9 @@ Keyword::Keyword(ElementCategory category, const KeywordOptions& options)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+#define Add_ { const char_t* k[] = 
+#define With(a, b) ; std::vector<string_t> v(k, k + _countof(k)); Add(a, b, v); }
+
 KeywordManager::KeywordManager() {
   const KeywordOptions options_default;
   const KeywordOptions options_invalid(true, true, false);
@@ -42,22 +45,22 @@ KeywordManager::KeywordManager() {
   const KeywordOptions options_unidentifiable_invalid(false, true, false);
   const KeywordOptions options_unidentifiable_unsearchable(false, false, true);
 
-  Add(kElementAnimeSeasonPrefix, options_unidentifiable, {
-      L"SAISON", L"SEASON"});
+  Add_{
+	  L"SAISON", L"SEASON"} With (kElementAnimeSeasonPrefix, options_unidentifiable);
 
-  Add(kElementAnimeType, options_unidentifiable, {
+  Add_{
       L"GEKIJOUBAN", L"MOVIE",
       L"OAD", L"OAV", L"ONA", L"OVA",
       L"SPECIAL", L"SPECIALS",
-      L"TV"});
-  Add(kElementAnimeType, options_unidentifiable_unsearchable, {
-      L"SP"});  // e.g. "Yumeiro Patissiere SP Professional"
-  Add(kElementAnimeType, options_unidentifiable_invalid, {
+      L"TV"} With (kElementAnimeType, options_unidentifiable);
+  Add_{
+      L"SP"} With (kElementAnimeType, options_unidentifiable_unsearchable);  // e.g. "Yumeiro Patissiere SP Professional"
+  Add_{
       L"ED", L"ENDING", L"NCED",
       L"NCOP", L"OP", L"OPENING",
-      L"PREVIEW", L"PV"});
+      L"PREVIEW", L"PV"} With (kElementAnimeType, options_unidentifiable_invalid);
 
-  Add(kElementAudioTerm, options_default, {
+  Add_{
       // Audio channels
       L"2.0CH", L"2CH", L"5.1", L"5.1CH", L"DTS", L"DTS-ES", L"DTS5.1",
       L"TRUEHD5.1",
@@ -65,60 +68,60 @@ KeywordManager::KeywordManager() {
       L"AAC", L"AACX2", L"AACX3", L"AACX4", L"AC3", L"FLAC", L"FLACX2",
       L"FLACX3", L"FLACX4", L"LOSSLESS", L"MP3", L"OGG", L"VORBIS",
       // Audio language
-      L"DUALAUDIO", L"DUAL AUDIO"});
+      L"DUALAUDIO", L"DUAL AUDIO"} With (kElementAudioTerm, options_default);
 
-  Add(kElementDeviceCompatibility, options_default, {
-      L"IPAD3", L"IPHONE5", L"IPOD", L"PS3", L"XBOX", L"XBOX360"});
-  Add(kElementDeviceCompatibility, options_unidentifiable, {
-      L"ANDROID"});
+  Add_{
+      L"IPAD3", L"IPHONE5", L"IPOD", L"PS3", L"XBOX", L"XBOX360"} With (kElementDeviceCompatibility, options_default);
+  Add_{
+      L"ANDROID"} With (kElementDeviceCompatibility, options_unidentifiable);
 
-  Add(kElementEpisodePrefix, options_default, {
+  Add_{
       L"EP", L"EP.", L"EPS", L"EPS.", L"EPISODE", L"EPISODE.", L"EPISODES",
       L"VOL", L"VOL.", L"VOLUME",
-      L"CAPITULO", L"EPISODIO", L"FOLGE"});
-  Add(kElementEpisodePrefix, options_invalid, {
-      L"E", L"\x7B2C"});  // single-letter episode keywords are not valid tokens
+      L"CAPITULO", L"EPISODIO", L"FOLGE"} With (kElementEpisodePrefix, options_default);
+  Add_{
+      L"E", L"\x7B2C"} With (kElementEpisodePrefix, options_invalid);  // single-letter episode keywords are not valid tokens
 
-  Add(kElementFileExtension, options_default, {
+  Add_{
       L"3GP", L"AVI", L"DIVX", L"FLV", L"M2TS", L"MKV", L"MOV", L"MP4", L"MPG",
-      L"OGM", L"RM", L"RMVB", L"WEBM", L"WMV"});
-  Add(kElementFileExtension, options_invalid, {
+      L"OGM", L"RM", L"RMVB", L"WEBM", L"WMV"} With (kElementFileExtension, options_default);
+  Add_{
       L"AAC", L"AIFF", L"FLAC", L"M4A", L"MP3", L"MKA", L"OGG", L"WAV", L"WMA",
       L"7Z", L"RAR", L"ZIP",
-      L"ASS", L"SRT"});
+      L"ASS", L"SRT"} With (kElementFileExtension, options_invalid);
 
-  Add(kElementLanguage, options_default, {
-      L"ENG", L"ENGLISH", L"ESPANOL", L"JAP", L"PT-BR", L"SPANISH", L"VOSTFR"});
-  Add(kElementLanguage, options_unidentifiable, {
-      L"ESP", L"ITA"});  // e.g. "Tokyo ESP", "Bokura ga Ita"
+  Add_{
+      L"ENG", L"ENGLISH", L"ESPANOL", L"JAP", L"PT-BR", L"SPANISH", L"VOSTFR"} With (kElementLanguage, options_default);
+  Add_{
+      L"ESP", L"ITA"} With (kElementLanguage, options_unidentifiable);  // e.g. "Tokyo ESP", "Bokura ga Ita"
 
-  Add(kElementOther, options_default, {
+  Add_{
       L"REMASTER", L"REMASTERED", L"UNCENSORED", L"UNCUT",
-      L"TS", L"VFR", L"WIDESCREEN", L"WS"});
+      L"TS", L"VFR", L"WIDESCREEN", L"WS"} With (kElementOther, options_default);
 
-  Add(kElementReleaseGroup, options_default, {
-      L"THORA"});
+  Add_{
+      L"THORA"} With (kElementReleaseGroup, options_default);
 
-  Add(kElementReleaseInformation, options_default, {
-      L"BATCH", L"COMPLETE", L"PATCH", L"REMUX"});
-  Add(kElementReleaseInformation, options_unidentifiable, {
-      L"END", L"FINAL"});  // e.g. "The End of Evangelion", "Final Approach"
+  Add_{
+      L"BATCH", L"COMPLETE", L"PATCH", L"REMUX"} With (kElementReleaseInformation, options_default);
+  Add_{
+      L"END", L"FINAL"} With (kElementReleaseInformation, options_unidentifiable);  // e.g. "The End of Evangelion", "Final Approach"
 
-  Add(kElementReleaseVersion, options_default, {
-      L"V0", L"V1", L"V2", L"V3", L"V4"});
+  Add_{
+      L"V0", L"V1", L"V2", L"V3", L"V4"} With (kElementReleaseVersion, options_default);
 
-  Add(kElementSource, options_default, {
+  Add_{
       L"BD", L"BDRIP", L"BLURAY", L"BLU-RAY",
       L"DVD", L"DVD5", L"DVD9", L"DVD-R2J", L"DVDRIP", L"DVD-RIP",
       L"R2DVD", L"R2J", L"R2JDVD", L"R2JDVDRIP",
       L"HDTV", L"HDTVRIP", L"TVRIP", L"TV-RIP",
-      L"WEBCAST", L"WEBRIP"});
+      L"WEBCAST", L"WEBRIP"} With (kElementSource, options_default);
 
-  Add(kElementSubtitles, options_default, {
+  Add_{
       L"ASS", L"BIG5", L"DUB", L"DUBBED", L"HARDSUB", L"RAW", L"SOFTSUB",
-      L"SOFTSUBS", L"SUB", L"SUBBED", L"SUBTITLED"});
+      L"SOFTSUBS", L"SUB", L"SUBBED", L"SUBTITLED"} With (kElementSubtitles, options_default);
 
-  Add(kElementVideoTerm, options_default, {
+  Add_{
       // Frame rate
       L"23.976FPS", L"24FPS", L"29.97FPS", L"30FPS", L"60FPS", L"120FPS",
       // Video codec
@@ -130,25 +133,28 @@ KeywordManager::KeywordManager() {
       // Video quality
       L"HQ", L"LQ",
       // Video resolution
-      L"HD", L"SD"});
+      L"HD", L"SD"} With (kElementVideoTerm, options_default);
 }
+
+#undef With
+#undef Add_
 
 void KeywordManager::Add(ElementCategory category,
                          const KeywordOptions& options,
-                         const std::initializer_list<string_t>& keywords) {
-  auto& keys = GetKeywordContainer(category);
-  for (const auto& keyword : keywords) {
-    if (keyword.empty())
+                         const std::vector<string_t>& keywords) {
+  KeywordManager::keyword_container_t& keys = GetKeywordContainer(category);
+  for (std::vector<string_t>::const_iterator keyword = keywords.begin(); keyword != keywords.end(); ++keyword) {
+    if (keyword->empty())
       continue;
-    if (keys.find(keyword) != keys.end())
+    if (keys.find(*keyword) != keys.end())
       continue;
-    keys.insert(std::make_pair(keyword, Keyword(category, options)));
+    keys.insert(std::make_pair(*keyword, Keyword(category, options)));
   }
 }
 
 bool KeywordManager::Find(ElementCategory category, const string_t& str) const {
-  const auto& keys = GetKeywordContainer(category);
-  auto it = keys.find(str);
+  const KeywordManager::keyword_container_t& keys = GetKeywordContainer(category);
+  const KeywordManager::keyword_container_t::const_iterator it = keys.find(str);
   if (it != keys.end() && it->second.category == category)
     return true;
 
@@ -157,8 +163,8 @@ bool KeywordManager::Find(ElementCategory category, const string_t& str) const {
 
 bool KeywordManager::Find(const string_t& str, ElementCategory& category,
                           KeywordOptions& options) const {
-  const auto& keys = GetKeywordContainer(category);
-  auto it = keys.find(str);
+  const KeywordManager::keyword_container_t& keys = GetKeywordContainer(category);
+  const KeywordManager::keyword_container_t::const_iterator it = keys.find(str);
   if (it != keys.end()) {
     if (category == kElementUnknown) {
       category = it->second.category;
@@ -190,23 +196,22 @@ void KeywordManager::Peek(const string_t& filename,
                           Elements& elements,
                           std::vector<TokenRange>& preidentified_tokens) const {
   typedef std::pair<ElementCategory, std::vector<string_t>> entry_t;
-  static const std::vector<entry_t> entries{
-    {kElementAudioTerm, {L"Dual Audio"}},
-    {kElementVideoTerm, {L"H264", L"H.264", L"h264", L"h.264"}},
-    {kElementVideoResolution, {L"480p", L"720p", L"1080p"}},
-    {kElementSource, {L"Blu-Ray"}}
-  };
+  static /*const*/ std::vector<entry_t> entries;
+  { ElementCategory c = kElementAudioTerm;       const char_t* k[] = {L"Dual Audio"}; entry_t e; e.first = c; e.second.assign(k, k + _countof(k)); entries.push_back(e); }
+  { ElementCategory c = kElementVideoTerm;       const char_t* k[] = {L"H264", L"H.264", L"h264", L"h.264"}; entry_t e; e.first = c; e.second.assign(k, k + _countof(k)); entries.push_back(e); }
+  { ElementCategory c = kElementVideoResolution; const char_t* k[] = {L"480p", L"720p", L"1080p"}; entry_t e; e.first = c; e.second.assign(k, k + _countof(k)); entries.push_back(e); }
+  { ElementCategory c = kElementSource;          const char_t* k[] = {L"Blu-Ray"}; entry_t e; e.first = c; e.second.assign(k, k + _countof(k)); entries.push_back(e); }
 
-  auto it_begin = filename.begin() + range.offset;
-  auto it_end = it_begin + range.size;
+  string_t::const_iterator it_begin = filename.begin() + range.offset;
+  string_t::const_iterator it_end = it_begin + range.size;
 
-  for (const auto& entry : entries) {
-    for (const auto& keyword : entry.second) {
-      auto it = std::search(it_begin, it_end, keyword.begin(), keyword.end());
+  for(std::vector<entry_t>::const_iterator entry = entries.begin(); entry != entries.end(); ++entry) {
+    for(std::vector<string_t>::const_iterator keyword = entry->second.begin(); keyword != entry->second.end(); ++keyword) {
+      string_t::const_iterator it = std::search(it_begin, it_end, keyword->begin(), keyword->end());
       if (it != it_end) {
-        auto offset = it - filename.begin();
-        elements.insert(entry.first, keyword);
-        preidentified_tokens.push_back(TokenRange(offset, keyword.size()));
+        size_t offset = it - filename.begin();
+        elements.insert(entry->first, *keyword);
+        preidentified_tokens.push_back(TokenRange(offset, keyword->size()));
       }
     }
   }

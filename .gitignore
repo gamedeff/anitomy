@@ -1,0 +1,5 @@
+anitomy.vcproj.*.user
+anitomy.ncb
+anitomy.suo
+lib/*.lib
+obj/*
